@@ -66,6 +66,10 @@ def main():
     replica_folder = args.replica
     log_file_path = args.log
 
+    with open(log_file_path, 'a') as log:
+        while True:
+            sync_folders(source_folder, replica_folder, log)
+            time.sleep(args.interval)
 
 if __name__ == "__main__":
     main()

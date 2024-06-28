@@ -4,37 +4,19 @@ import shutil
 import argparse
 import hashlib
 
-def log_message(log, message):
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S')
-    log.write(f"[{current_time}] {message}\n")
-    log.flush()
-    print(message)
-
-def compute_md5(file_path):
-    hash_md5 = hashlib.md5()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            hash_md5.update(chunk)
-    return hash_md5.hexdigest()
-
-def copy_file(source_file, replica_file, log):
-    shutil.copy2(source_file, replica_file)
-    log_message(log, f"Copied file: {os.path.basename(source_file)} to {os.path.basename(replica_file)}")
-
-def synchronize_folders(source, replica, log):
+def synch_folders(source, replica, log):
     for root, dirs, files in os.walk(source):
         relative_path = os.path.relpath(root, source)
         replica_root = os.path.join(replica, relative_path)
 
-        if not os.path.exists(replica_root):
-            os.makedirs(replica_root)
-            log_message(log, f"Created directory: {os.path.relpath(replica_root, replica)}")
+        os.makedirs(replica_root, exist_ok=True)
+        log_message(log, f"Created directory: {os.path.relpath(replica_root, replica)}")
 
         for file in files:
             source_file = os.path.join(root, file)
             replica_file = os.path.join(replica_root, file)
 
-            if not os.path.exists(replica_file) or compute_md5(source_file) != compute_md5(replica_file):
+            if md5(source_file) != md5(replica_file):
                 copy_file(source_file, replica_file, log)
 
     for root, dirs, files in os.walk(replica, topdown=False):
@@ -55,6 +37,23 @@ def synchronize_folders(source, replica, log):
                 shutil.rmtree(replica_dir)
                 log_message(log, f"Removed directory: {os.path.relpath(replica_dir, replica)}")
 
+def log_message(log, message):
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S')
+    log.write(f"[{current_time}] {message}\n")
+    log.flush()
+    print(message)
+
+def md5(file_path):
+    hash_md5 = hashlib.md5()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+def copy_file(source_file, replica_file, log):
+    shutil.copy2(source_file, replica_file)
+    log_message(log, f"Copied file: {os.path.basename(source_file)} to {os.path.basename(replica_file)}")
+
 def main():
     parser = argparse.ArgumentParser(description="Synchronize two folders.")
     parser.add_argument("--source", required=True, help="C:/Users/TestUserPC/Desktop/source)")
@@ -69,12 +68,16 @@ def main():
 
     with open(log_file_path, 'a') as log:
         while True:
-            try:
-                synchronize_folders(source_folder, replica_folder, log)
-            except Exception as e:
-                log_message(log, f"An error occurred: {e}")
+            synch_folders(source_folder, replica_folder, log)
             time.sleep(args.interval)
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
 

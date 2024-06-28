@@ -4,7 +4,7 @@ import shutil
 import argparse
 import hashlib
 
-def synch_folders(source, replica, log):
+def sync_folders(source, replica, log):
     for root, dirs, files in os.walk(source):
         relative_path = os.path.relpath(root, source)
         replica_root = os.path.join(replica, relative_path)
@@ -65,6 +65,7 @@ def main():
     source_folder = args.source
     replica_folder = args.replica
     log_file_path = args.log
+
 
 if __name__ == "__main__":
     main()
